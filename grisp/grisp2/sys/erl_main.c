@@ -150,8 +150,12 @@ static char *hostname = "defaulthostname";
 
 static char *wpa_supplicant_conf = NULL;
 
-static char *erl_args = "erl.rtems -- -root otp"
-                        " -home home -boot start_sasl -pa .";
+static char *erl_args;
+static const char *default_erl_args = "erl.rtems -- "
+                                      "-root otp "
+                                      "-home home "
+                                      "-boot start_sasl "
+                                      "-pa .";
 
 #define MAX_ARGC 256
 
@@ -366,6 +370,7 @@ static void Init(rtems_task_argument arg) {
   }
 
   printf("[ERL] Reading %s", INI_FILE);
+  erl_args = strdup(default_erl_args);
   evaluate_ini_file(INI_FILE);
   printf("[ERL] Booting with arg: %s\n", erl_args);
   parse_args(erl_args);
@@ -477,7 +482,6 @@ static void Init(rtems_task_argument arg) {
 
 #define CONFIGURE_STACK_CHECKER_ENABLED
 
-// Old
 #define CONFIGURE_INITIAL_EXTENSIONS                                           \
   { .fatal = fatal_extension }
 
