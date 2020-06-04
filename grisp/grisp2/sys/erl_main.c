@@ -27,13 +27,20 @@
 
 #ifdef __rtems__
 #include <rtems.h>
-#include <rtems/shell.h>
+#include <rtems/bsd/bsd.h>
+#include <rtems/bdbuf.h>
 #include <rtems/console.h>
 #include <rtems/malloc.h>
+#include <rtems/media.h>
+#include <rtems/score/armv7m.h>
+#include <rtems/shell.h>
+#include <rtems/stringto.h>
+#include <rtems/ftpd.h>
+#include <rtems/libio.h>
 #include <machine/rtems-bsd-commands.h>
+
 #include <bsp.h>
 #include <assert.h>
-#include <rtems/libio.h>
 #include <sysexits.h>
 #include <sys/mman.h>
 
@@ -46,6 +53,8 @@
 #define MNT "/media/mmcsd-0-0/"
 #define INI_FILE (MNT "grisp.ini")
 #define DHCP_CONF_FILE (MNT "dhcpcd.conf")
+
+#define STACK_SIZE_INIT_TASK    (64 * 1024)
 
 #define PRIO_DHCP		(RTEMS_MAXIMUM_PRIORITY - 1)
 #define PRIO_WPA		(RTEMS_MAXIMUM_PRIORITY - 1)
@@ -502,12 +511,14 @@ static void Init(rtems_task_argument arg)
  * Configure LibBSD.
  */
 #include <grisp/libbsd-nexus-config.h>
-
-#define RTEMS_BSD_CONFIG_INIT
 #define RTEMS_BSD_CONFIG_TERMIOS_KQUEUE_AND_POLL
+#define RTEMS_BSD_CONFIG_INIT
 
 #include <machine/rtems-bsd-config.h>
 
+/*
+ * Configure RTEMS.
+ */
 #define CONFIGURE_MICROSECONDS_PER_TICK 1000
 
 #define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
@@ -517,24 +528,29 @@ static void Init(rtems_task_argument arg)
 #define CONFIGURE_APPLICATION_NEEDS_LIBBLOCK
 
 #define CONFIGURE_FILESYSTEM_DOSFS
-
+#define CONFIGURE_MAXIMUM_FILE_DESCRIPTORS 64
 /* increase max file size in IMFS to 64MB */
 #define CONFIGURE_IMFS_MEMFILE_BYTES_PER_BLOCK 256
 
-#define CONFIGURE_LIBIO_MAXIMUM_FILE_DESCRIPTORS 64
-
-#define CONFIGURE_MAXIMUM_USER_EXTENSIONS 8
-
-#define CONFIGURE_STACK_CHECKER_ENABLED
 
 #define CONFIGURE_UNLIMITED_OBJECTS
 #define CONFIGURE_UNIFIED_WORK_AREAS
+#define CONFIGURE_MAXIMUM_USER_EXTENSIONS 8
 
-#define CONFIGURE_INITIAL_EXTENSIONS { .fatal = fatal_extension }
+#define CONFIGURE_INIT_TASK_STACK_SIZE STACK_SIZE_INIT_TASK
+#define CONFIGURE_INIT_TASK_INITIAL_MODES RTEMS_DEFAULT_MODES
+#define CONFIGURE_INIT_TASK_ATTRIBUTES RTEMS_FLOATING_POINT
 
-#define CONFIGURE_BDBUF_BUFFER_MAX_SIZE (16 * 1024)
+#define CONFIGURE_BDBUF_BUFFER_MAX_SIZE (32 * 1024)
 #define CONFIGURE_BDBUF_MAX_READ_AHEAD_BLOCKS 4
 #define CONFIGURE_BDBUF_CACHE_MEMORY_SIZE (1 * 1024 * 1024)
+#define CONFIGURE_BDBUF_READ_AHEAD_TASK_PRIORITY 97
+#define CONFIGURE_SWAPOUT_TASK_PRIORITY 97
+
+#define CONFIGURE_STACK_CHECKER_ENABLED
+
+// Old
+#define CONFIGURE_INITIAL_EXTENSIONS { .fatal = fatal_extension }
 
 #define CONFIGURE_MALLOC_DIRTY
 
