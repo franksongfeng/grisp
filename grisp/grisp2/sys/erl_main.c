@@ -397,19 +397,19 @@ static void Init(rtems_task_argument arg) {
   grisp_led_set2(false, true, false);
 #endif
 
-  printf("mkdir /tmp\n");
+  printf("[ERL] mkdir /tmp\n");
   rv = mkdir("/tmp", 0755);
   assert(rv == 0);
 
-  printf("mkdir /tmp/log\n");
+  printf("[ERL] mkdir /tmp/log\n");
   rv = mkdir("/tmp/log", 0755);
   assert(rv == 0);
 
-  printf("mkdir /home\n");
+  printf("[ERL] mkdir /home\n");
   rv = mkdir("/home", 0755);
   assert(rv == 0);
 
-  printf("Setting environment\n");
+  printf("[ERL] Setting environment\n");
   setenv("BINDIR", "otp/lib/erlang/bin", 1);
   setenv("ROOTDIR", "otp", 1);
   setenv("PROGNAME", "erl.rtems", 1);
@@ -418,25 +418,25 @@ static void Init(rtems_task_argument arg) {
   /* Need to change the directory here because some dunderheaded
      library changes it back to root otherwise */
 
-  printf("chdir(%s)\n", MNT);
+  printf("[ERL] chdir(%s)\n", MNT);
   rv = chdir(MNT);
   if (rv < 0)
     perror("can't chdir");
 
-  printf("\nerl_main: starting ...\n");
+  printf("\n[ERL] erl_main: starting ...\n");
 
   p = getcwd(pwd, 1024);
   if (p == NULL)
-    printf("getcwd error\n");
+    printf("[ERL] getcwd error\n");
   else
-    printf("getcwd: %s\n", p);
+    printf("[ERL] getcwd: %s\n", p);
 
   sethostname(hostname, strlen(hostname));
-  printf("hostname: %s\n", hostname);
+  printf("[ERL] hostname: %s\n", hostname);
 
-  printf("starting erlang runtime\n");
+  printf("[ERL] starting erlang runtime\n");
   erl_start(argc, argv);
-  printf("erlang runtime exited\n");
+  printf("[ERL] erlang runtime exited\n");
   sleep(2);
   exit(0);
 }
