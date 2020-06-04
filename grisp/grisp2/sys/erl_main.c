@@ -282,7 +282,7 @@ static void evaluate_ini_file(const char *ini_file)
 
     rv = ini_parse(ini_file, ini_file_handler, NULL);
     if (rv == -1) {
-	printf("WARNING: Can't find ini file %s -> using defaults\n", ini_file);
+	printf("[ERL] WARNING: %s not found, using defaults\n", ini_file);
     }
 }
 
@@ -389,7 +389,7 @@ void parse_args(char *args)
 	 p = strtok_r(NULL, " \t", &last))
     {
 	if (argc >= MAX_ARGC) {
-	        printf("ERROR: too many erl arguments\n");
+	    printf("[ERL] ERROR: Too many erl arguments\n");
 		exit(-1);
 	}
 
@@ -408,28 +408,31 @@ static void Init(rtems_task_argument arg)
 
   grisp_led_set1(false, false, false);
   grisp_led_set2(true, true, true);
-  printf("mounting sd card\n");
+  printf("[ERL] Mounting SD card asynchronously\n");
   grisp_init_sd_card();
+  printf("[ERL] Lowering self priority\n");
   grisp_init_lower_self_prio();
+  printf("[ERL] Initializing libbsd\n");
   grisp_init_libbsd();
-  printf("ifconfig lo0\n");
+  printf("[ERL] Running ifconfig on lo0\n");
   default_network_ifconfig_lo0();
 
   /* Wait for the SD card */
   grisp_led_set2(true, false, true);
   sc = grisp_init_wait_for_sd();
   if(sc == RTEMS_SUCCESSFUL) {
-    printf("sd card mounted\n");
+    printf("[ERL] SD card mounted\n");
   } else {
-    printf("ERROR: SD could not be mounted after timeout\n");
+    printf("[ERL] ERROR: SD card could not be mounted after timeout\n");
     grisp_led_set2(true, false, false);
   }
 
+  printf("[ERL] Reading %s", INI_FILE);
   evaluate_ini_file(INI_FILE);
-  printf("%s\n", erl_args);
+  printf("[ERL] Booting with arg: %s\n", erl_args);
   parse_args(erl_args);
 
-#if 0  
+#if 0
   if(start_dhcp) {
       grisp_led_set2(false, true, true);
       grisp_init_dhcpcd_with_config(PRIO_DHCP, DHCP_CONF_FILE);
@@ -450,7 +453,7 @@ static void Init(rtems_task_argument arg)
   }
   grisp_led_set2(false, true, false);
 #endif
-  
+
   printf("mkdir /tmp\n");
   rv = mkdir("/tmp", 0755);
   assert(rv == 0);
