@@ -445,6 +445,7 @@ static void Init(rtems_task_argument arg) {
  * Configure LibBSD.
  */
 #include <grisp/libbsd-nexus-config.h>
+
 #define RTEMS_BSD_CONFIG_TERMIOS_KQUEUE_AND_POLL
 #define RTEMS_BSD_CONFIG_INIT
 
@@ -463,6 +464,7 @@ static void Init(rtems_task_argument arg) {
 
 #define CONFIGURE_FILESYSTEM_DOSFS
 #define CONFIGURE_MAXIMUM_FILE_DESCRIPTORS 64
+#define CONFIGURE_LIBIO_MAXIMUM_FILE_DESCRIPTORS 64
 /* increase max file size in IMFS to 64MB */
 #define CONFIGURE_IMFS_MEMFILE_BYTES_PER_BLOCK 256
 
