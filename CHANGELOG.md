@@ -1,4 +1,3 @@
-
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -8,6 +7,13 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Changed
+
+* **BREAKING CHANGE:** Require `GRISP_TC_ROOT` for all Erlang version to point
+  to the tool chain root folder and not the subfolder `rtems/5`. If you have
+  configured the setting `grisp.build.toolchain.directory` you need to remove
+  the `rtems/5` postfix if present.
 
 ## [1.2.0] - 2020-03-03
 
