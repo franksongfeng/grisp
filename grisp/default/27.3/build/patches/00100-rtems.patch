@@ -47,38 +47,38 @@ index 3957990a3a..5a47d7609d 100644
  ifeq ($(NO_START_SCRIPTS),)
  ERTSDIRS += start_scripts
 diff --git a/erts/emulator/Makefile.in b/erts/emulator/Makefile.in
-index e93f052d75..2f8eee6eed 100644
+index 86e3f0f..6500e64 100644
 --- a/erts/emulator/Makefile.in
 +++ b/erts/emulator/Makefile.in
-@@ -480,8 +480,10 @@ endif
- 
+@@ -492,8 +492,10 @@ endif
+
  UNIX_ONLY_BUILDS =
  ifeq ($(ERLANG_OSTYPE), unix)
 +ifneq ($(findstring rtems, $(TARGET)), rtems)
- UNIX_ONLY_BUILDS =	$(BINDIR)/$(CS_EXECUTABLE)
+ UNIX_ONLY_BUILDS =     $(BINDIR)/$(CS_EXECUTABLE)
  endif
 +endif
- 
+
  .PHONY: all
  ifdef VOID_EMULATOR
-@@ -552,9 +554,11 @@ ifeq ($(RELEASE_LIBBEAM),yes)
- 	$(INSTALL_PROGRAM) $(BINDIR)/$(EMULATOR_LIB) "$(RELSYSDIR)/lib"
+@@ -564,9 +566,11 @@ ifeq ($(RELEASE_LIBBEAM),yes)
+        $(INSTALL_PROGRAM) $(BINDIR)/$(EMULATOR_LIB) "$(RELSYSDIR)/lib"
  endif
  ifeq ($(ERLANG_OSTYPE), unix)
 +ifneq ($(findstring rtems, $(TARGET)), rtems)
- 	$(INSTALL_PROGRAM) $(BINDIR)/$(CS_EXECUTABLE) "$(RELSYSDIR)/bin"
+        $(INSTALL_PROGRAM) $(BINDIR)/$(CS_EXECUTABLE) "$(RELSYSDIR)/bin"
  endif
  endif
 +endif
- 
+
  .PHONY: release_docs_spec
  release_docs_spec:
-diff --git a/erts/emulator/beam/io.c b/erts/emulator/beam/io.c
-index d8653e30a5..6561fdd780 100644
+ diff --git a/erts/emulator/beam/io.c b/erts/emulator/beam/io.c
+index 78efccc..3f26cb3 100644
 --- a/erts/emulator/beam/io.c
 +++ b/erts/emulator/beam/io.c
-@@ -3022,7 +3022,7 @@ void erts_init_io(int port_tab_size,
- 
+@@ -3024,7 +3024,7 @@ void erts_init_io(int port_tab_size,
+
      init_driver(&fd_driver, &fd_driver_entry, NULL);
      init_driver(&spawn_driver, &spawn_driver_entry, NULL);
 -#ifndef __WIN32__
@@ -100,11 +100,11 @@ index f90b9bfe66..63cf65934b 100644
  #else
  #  define ERTS_WRITE_UNLIKELY(X) X
 diff --git a/erts/emulator/nifs/common/prim_socket_nif.c b/erts/emulator/nifs/common/prim_socket_nif.c
-index a41e3b0cd2..1a6aa283ce 100644
+index 654b44e..4934077 100644
 --- a/erts/emulator/nifs/common/prim_socket_nif.c
 +++ b/erts/emulator/nifs/common/prim_socket_nif.c
-@@ -13758,6 +13758,11 @@ int on_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
- 
+@@ -13836,6 +13836,11 @@ int on_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
+
      // ESOCK_EPRINTF("\r\n[ESOCK] init IOV max\r\n");
      data.iov_max =
 +#if defined(__rtems__)
@@ -115,7 +115,7 @@ index a41e3b0cd2..1a6aa283ce 100644
  #if defined(NO_SYSCONF) || (! defined(_SC_IOV_MAX))
  #   ifdef IOV_MAX
          IOV_MAX
-@@ -13766,6 +13771,7 @@ int on_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
+@@ -13844,6 +13849,7 @@ int on_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
  #   endif
  #else
          sysconf(_SC_IOV_MAX)
@@ -146,7 +146,7 @@ index ba5ba255d4..93e8fe08c9 100644
  
  int erts_sys_prepare_crash_dump(int secs)
 diff --git a/erts/etc/common/Makefile.in b/erts/etc/common/Makefile.in
-index 42af9c87dc..919d32869d 100644
+index 919d328..bc03b5a 100644
 --- a/erts/etc/common/Makefile.in
 +++ b/erts/etc/common/Makefile.in
 @@ -183,6 +183,26 @@ endif
@@ -177,8 +177,8 @@ index 42af9c87dc..919d32869d 100644
  ENTRY_LDFLAGS=
  ENTRY_OBJ=
 @@ -216,6 +236,7 @@ INSTALL_PROGS =              \
- 	$(BINDIR)/$(ERLEXEC) \
- 	$(INSTALL_EMBEDDED_PROGS)
+        $(BINDIR)/$(ERLEXEC) \
+        $(INSTALL_EMBEDDED_PROGS)
  endif
 +endif
 
@@ -186,18 +186,18 @@ index 42af9c87dc..919d32869d 100644
 
 @@ -494,11 +515,13 @@ $(BINDIR)/typer@EXEEXT@: $(OBJDIR)/typer.o $(ERTS_LIB)
  $(OBJDIR)/typer.o: typer.c $(RC_GENERATED)
- 	$(V_CC) $(CFLAGS) -o $@ -c typer.c
- 
+        $(V_CC) $(CFLAGS) -o $@ -c typer.c
+
 +ifneq ($(findstring rtems,$(TARGET)), rtems)
  $(BINDIR)/escript@EXEEXT@: $(OBJDIR)/escript.o $(ERTS_LIB)
- 	$(ld_verbose) $(LD) $(LDFLAGS) -o $@ $(OBJDIR)/escript.o -L$(OBJDIR) $(LIBS) $(ERTS_INTERNAL_LIBS)
- 
+        $(ld_verbose) $(LD) $(LDFLAGS) -o $@ $(OBJDIR)/escript.o -L$(OBJDIR) $(LIBS) $(ERTS_INTERNAL_LIBS)
+
  $(OBJDIR)/escript.o: escript.c $(RC_GENERATED)
- 	$(V_CC) $(CFLAGS) -o $@ -c escript.c
+        $(V_CC) $(CFLAGS) -o $@ -c escript.c
 +endif
- 
+
  $(BINDIR)/ct_run@EXEEXT@: $(OBJDIR)/ct_run.o $(ERTS_LIB)
- 	$(ld_verbose) $(LD) $(LDFLAGS) -o $@ $(OBJDIR)/ct_run.o -L$(OBJDIR) $(LIBS) $(ERTS_INTERNAL_LIBS)
+        $(ld_verbose) $(LD) $(LDFLAGS) -o $@ $(OBJDIR)/ct_run.o -L$(OBJDIR) $(LIBS) $(ERTS_INTERNAL_LIBS)
 diff --git a/erts/etc/unix/Install.src b/erts/etc/unix/Install.src
 index b00dd09f1a..426cd1b1f5 100644
 --- a/erts/etc/unix/Install.src

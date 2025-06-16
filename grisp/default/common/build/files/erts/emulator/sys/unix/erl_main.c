@@ -698,10 +698,6 @@ static void Init(rtems_task_argument arg) {
   char *p;
   struct grisp_eeprom eeprom = {0};
 
-#ifndef GRISP_PLATFORM_GRISP_NANO
-  static char dhcpfile[192];
-#endif
-
 #ifdef GRISP_PLATFORM_GRISP2
 
   const void *fdt;
@@ -1018,8 +1014,7 @@ static void Init(rtems_task_argument arg) {
     &rtems_shell_NETSTAT_Command, \
     &rtems_shell_DHCPCD_Command, \
     &rtems_shell_HOSTNAME_Command, \
-    &rtems_shell_WLANSTATS_Command, \
-    &rtems_shell_STARTFTP_Command,
+    &rtems_shell_WLANSTATS_Command,
 #endif
 
 #define CONFIGURE_SHELL_USER_COMMANDS \
