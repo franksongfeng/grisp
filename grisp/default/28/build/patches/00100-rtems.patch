@@ -47,38 +47,38 @@ index 3957990a3a..5a47d7609d 100644
  ifeq ($(NO_START_SCRIPTS),)
  ERTSDIRS += start_scripts
 diff --git a/erts/emulator/Makefile.in b/erts/emulator/Makefile.in
-index 86e3f0f..6500e64 100644
+index e93f052d75..2f8eee6eed 100644
 --- a/erts/emulator/Makefile.in
 +++ b/erts/emulator/Makefile.in
-@@ -492,8 +492,10 @@ endif
-
+@@ -480,8 +480,10 @@ endif
+ 
  UNIX_ONLY_BUILDS =
  ifeq ($(ERLANG_OSTYPE), unix)
 +ifneq ($(findstring rtems, $(TARGET)), rtems)
- UNIX_ONLY_BUILDS =     $(BINDIR)/$(CS_EXECUTABLE)
+ UNIX_ONLY_BUILDS =	$(BINDIR)/$(CS_EXECUTABLE)
  endif
 +endif
-
+ 
  .PHONY: all
  ifdef VOID_EMULATOR
-@@ -564,9 +566,11 @@ ifeq ($(RELEASE_LIBBEAM),yes)
-        $(INSTALL_PROGRAM) $(BINDIR)/$(EMULATOR_LIB) "$(RELSYSDIR)/lib"
+@@ -552,9 +554,11 @@ ifeq ($(RELEASE_LIBBEAM),yes)
+ 	$(INSTALL_PROGRAM) $(BINDIR)/$(EMULATOR_LIB) "$(RELSYSDIR)/lib"
  endif
  ifeq ($(ERLANG_OSTYPE), unix)
 +ifneq ($(findstring rtems, $(TARGET)), rtems)
-        $(INSTALL_PROGRAM) $(BINDIR)/$(CS_EXECUTABLE) "$(RELSYSDIR)/bin"
+ 	$(INSTALL_PROGRAM) $(BINDIR)/$(CS_EXECUTABLE) "$(RELSYSDIR)/bin"
  endif
  endif
 +endif
-
+ 
  .PHONY: release_docs_spec
  release_docs_spec:
- diff --git a/erts/emulator/beam/io.c b/erts/emulator/beam/io.c
-index 78efccc..3f26cb3 100644
+diff --git a/erts/emulator/beam/io.c b/erts/emulator/beam/io.c
+index d8653e30a5..6561fdd780 100644
 --- a/erts/emulator/beam/io.c
 +++ b/erts/emulator/beam/io.c
-@@ -3024,7 +3024,7 @@ void erts_init_io(int port_tab_size,
-
+@@ -3022,7 +3022,7 @@ void erts_init_io(int port_tab_size,
+ 
      init_driver(&fd_driver, &fd_driver_entry, NULL);
      init_driver(&spawn_driver, &spawn_driver_entry, NULL);
 -#ifndef __WIN32__
@@ -100,11 +100,11 @@ index f90b9bfe66..63cf65934b 100644
  #else
  #  define ERTS_WRITE_UNLIKELY(X) X
 diff --git a/erts/emulator/nifs/common/prim_socket_nif.c b/erts/emulator/nifs/common/prim_socket_nif.c
-index 654b44e..4934077 100644
+index a41e3b0cd2..1a6aa283ce 100644
 --- a/erts/emulator/nifs/common/prim_socket_nif.c
 +++ b/erts/emulator/nifs/common/prim_socket_nif.c
-@@ -13836,6 +13836,11 @@ int on_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
-
+@@ -13758,6 +13758,11 @@ int on_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
+ 
      // ESOCK_EPRINTF("\r\n[ESOCK] init IOV max\r\n");
      data.iov_max =
 +#if defined(__rtems__)
@@ -115,7 +115,7 @@ index 654b44e..4934077 100644
  #if defined(NO_SYSCONF) || (! defined(_SC_IOV_MAX))
  #   ifdef IOV_MAX
          IOV_MAX
-@@ -13844,6 +13849,7 @@ int on_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
+@@ -13766,6 +13771,7 @@ int on_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
  #   endif
  #else
          sysconf(_SC_IOV_MAX)
@@ -146,13 +146,13 @@ index ba5ba255d4..93e8fe08c9 100644
  
  int erts_sys_prepare_crash_dump(int secs)
 diff --git a/erts/etc/common/Makefile.in b/erts/etc/common/Makefile.in
-index 919d328..bc03b5a 100644
+index 77685b9..e0eefb4 100644
 --- a/erts/etc/common/Makefile.in
 +++ b/erts/etc/common/Makefile.in
-@@ -183,6 +183,26 @@ endif
+@@ -185,6 +185,26 @@ endif
  PORT_ENTRY_POINT=erl_port_entry
  ENTRY_LDFLAGS=-entry:$(PORT_ENTRY_POINT)
- 
+
 +else # UNIX (!win32)
 +ifeq ($(findstring rtems,$(TARGET)), rtems)
 +ENTRY_LDFLAGS=
@@ -176,7 +176,7 @@ index 919d328..bc03b5a 100644
  else
  ENTRY_LDFLAGS=
  ENTRY_OBJ=
-@@ -216,6 +236,7 @@ INSTALL_PROGS =              \
+@@ -218,6 +238,7 @@ INSTALL_PROGS =              \
         $(BINDIR)/$(ERLEXEC) \
         $(INSTALL_EMBEDDED_PROGS)
  endif
@@ -184,7 +184,7 @@ index 919d328..bc03b5a 100644
 
  -include ../unix/gdb-tools/jit-reader.mk
 
-@@ -494,11 +515,13 @@ $(BINDIR)/typer@EXEEXT@: $(OBJDIR)/typer.o $(ERTS_LIB)
+@@ -497,11 +518,13 @@ $(BINDIR)/typer@EXEEXT@: $(OBJDIR)/typer.o $(ERTS_LIB)
  $(OBJDIR)/typer.o: typer.c $(RC_GENERATED)
         $(V_CC) $(CFLAGS) -o $@ -c typer.c
 
@@ -268,21 +268,21 @@ index b00dd09f1a..426cd1b1f5 100644
  chmod 755 start_erl
  
 diff --git a/erts/lib_src/Makefile.in b/erts/lib_src/Makefile.in
-index 392d10f493..cf9e73b7be 100644
+index 995666c..b14bf60 100644
 --- a/erts/lib_src/Makefile.in
 +++ b/erts/lib_src/Makefile.in
-@@ -39,6 +39,7 @@ INSTALL=@INSTALL@
+@@ -41,6 +41,7 @@ INSTALL=@INSTALL@
  INSTALL_DIR=@INSTALL_DIR@
  INSTALL_DATA=@INSTALL_DATA@
  INSTALL_PROGRAM=@INSTALL_PROGRAM@
 +CROSS_COMPILING = @CROSS_COMPILING@
- 
+
  ERLANG_OSTYPE=@ERLANG_OSTYPE@
- 
-@@ -313,7 +314,13 @@ YCF_SOURCE_DIR=$(ERL_TOP)/erts/lib_src/yielding_c_fun
- 
+
+@@ -317,7 +318,13 @@ YCF_SOURCE_DIR=$(ERL_TOP)/erts/lib_src/yielding_c_fun
+
  include $(YCF_SOURCE_DIR)/main_target.mk
- 
+
 +ifeq ($(CROSS_COMPILING),no)
 +# TODO: Move this to a proper flag in erts/configure.in
 +#       (erl_xcomp_build_ycf=true|false)
@@ -290,21 +290,21 @@ index 392d10f493..cf9e73b7be 100644
 +else
 +$(OBJ_DIR)/MADE: $(ETHREAD_LIB) $(ERTS_INTERNAL_LIBS)
 +endif
- 	$(gen_verbose)
- 	$(V_at)echo $? > $(OBJ_DIR)/MADE
- 
-@@ -454,7 +461,11 @@ INTERNAL_RELEASE_LIBS= \
- 
+        $(gen_verbose)
+        $(V_at)echo $? > $(OBJ_DIR)/MADE
+
+@@ -458,7 +465,11 @@ INTERNAL_RELEASE_LIBS= \
+
  .PHONY: release_spec
  release_spec: all
 +ifeq ($(CROSS_COMPILING),no)
 +# TODO: Move this to a proper flag in erts/configure.in
 +#       (erl_xcomp_build_ycf=true|false)
- 	$(INSTALL_PROGRAM) $(YCF_EXECUTABLE) "$(RELSYSDIR)/bin"
+        $(INSTALL_PROGRAM) $(YCF_EXECUTABLE) "$(RELSYSDIR)/bin"
 +endif
- ifneq ($(strip $(RELEASE_INCLUDES)),)
- 	$(INSTALL_DIR) "$(RELSYSDIR)/include"
- 	$(INSTALL_DIR) "$(RELEASE_PATH)/usr/include"
+ ifeq ($(TARGET),win32)
+        $(INSTALL_DATA) $(YCF_EXECUTABLE:.exe=.pdb) "$(RELEASE_PATH)/erts-$(VSN)/bin"
+ endif
 diff --git a/erts/lib_src/pthread/ethread.c b/erts/lib_src/pthread/ethread.c
 index da4f1af11d..efa50c53aa 100644
 --- a/erts/lib_src/pthread/ethread.c
@@ -397,18 +397,18 @@ index c67782e7bd..89a8595e45 100644
  	$(INSTALL_PROGRAM) $(CALLBACK_LIB) "$(RELSYSDIR)/priv/lib"
  endif
 diff --git a/lib/crypto/configure b/lib/crypto/configure
-index 35b08dd781..987d8f40a9 100755
+index 0a5c964..1f4cdf7 100755
 --- a/lib/crypto/configure
 +++ b/lib/crypto/configure
-@@ -765,6 +765,7 @@ enable_option_checking
- enable_largefile
+@@ -766,6 +766,7 @@ enable_largefile
+ enable_security_hardening_flags
  with_ssl
  with_ssl_lib_subdir
 +with_ssl_lib
  with_ssl_incl
  with_ssl_zlib
  with_ssl_rpath
-@@ -1460,6 +1461,8 @@ Optional Packages:
+@@ -1464,6 +1465,8 @@ Optional Packages:
    --with-ssl-lib-subdir=RELATIVE_PATH
                            specify extra OpenSSL lib sub-directory to search in
                            (relative to base directory)
@@ -417,7 +417,7 @@ index 35b08dd781..987d8f40a9 100755
    --with-ssl-incl=PATH    base location of OpenSSL include dir (if different
                            than base location specified by --with-ssl=PATH)
    --with-ssl-zlib=PATH    Path to static zlib library to link the crypto NIF
-@@ -5946,6 +5949,14 @@ fi
+@@ -6970,6 +6973,14 @@ fi
   #default
  
  
@@ -432,7 +432,7 @@ index 35b08dd781..987d8f40a9 100755
  # Check whether --with-ssl-incl was given.
  if test ${with_ssl_incl+y}
  then :
-@@ -6396,8 +6407,8 @@ fi
+@@ -7420,8 +7431,8 @@ fi
  printf "%s\n" "$ac_cv_path_EGREP_TRADITIONAL" >&6; }
   EGREP_TRADITIONAL=$ac_cv_path_EGREP_TRADITIONAL
  
@@ -443,7 +443,7 @@ index 35b08dd781..987d8f40a9 100755
  
              SSL_APP=
              CRYPTO_APP=
-@@ -6409,7 +6420,7 @@ case "$erl_xcomp_without_sysroot-$with_ssl" in #(
+@@ -7433,7 +7444,7 @@ case "$erl_xcomp_without_sysroot-$with_ssl" in #(
                  echo "$skip" > $ERL_TOP/lib/$a/SKIP
                  done
           ;; #(
@@ -452,7 +452,7 @@ index 35b08dd781..987d8f40a9 100755
  
              # We search for OpenSSL in the common OS standard locations.
              SSL_APP=ssl
-@@ -6535,7 +6546,14 @@ rm -rf conftest*
+@@ -7559,7 +7570,14 @@ rm -rf conftest*
  
      CPPFLAGS="$save_CPPFLAGS"
  
@@ -468,7 +468,7 @@ index 35b08dd781..987d8f40a9 100755
  then :
  
                # Not a valid include...
-@@ -6950,7 +6968,7 @@ esac
+@@ -7974,7 +7992,7 @@ esac
  esac
  fi
           ;; #(
@@ -477,7 +477,7 @@ index 35b08dd781..987d8f40a9 100755
  
              # Option given with PATH to package
              if test ! -d "$with_ssl"
-@@ -7062,7 +7080,14 @@ rm -rf conftest*
+@@ -8086,7 +8104,14 @@ rm -rf conftest*
  
      CPPFLAGS="$save_CPPFLAGS"
  
@@ -493,7 +493,7 @@ index 35b08dd781..987d8f40a9 100755
  then :
  
                # Not a valid include...
-@@ -7437,7 +7462,827 @@ else case e in #(
+@@ -8461,7 +8486,867 @@ else case e in #(
                     ;;
  esac
  fi
@@ -549,11 +549,12 @@ index 35b08dd781..987d8f40a9 100755
 +
 +_ACEOF
 +if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-+  $EGREP "^yes.?$" >/dev/null 2>&1
++  $EGREP_TRADITIONAL "^yes.?$" >/dev/null 2>&1
 +then :
 +  valid_include=yes
-+else $as_nop
-+  valid_include=no
++else case e in #(
++  e) valid_include=no ;;
++esac
 +fi
 +rm -rf conftest*
 +
@@ -567,11 +568,12 @@ index 35b08dd781..987d8f40a9 100755
 +
 +_ACEOF
 +if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-+  $EGREP "^yes.?$" >/dev/null 2>&1
++  $EGREP_TRADITIONAL "^yes.?$" >/dev/null 2>&1
 +then :
 +  v3_include=yes
-+else $as_nop
-+  v3_include=no
++else case e in #(
++  e) v3_include=no ;;
++esac
 +fi
 +rm -rf conftest*
 +
@@ -589,11 +591,12 @@ index 35b08dd781..987d8f40a9 100755
 +
 +_ACEOF
 +if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-+  $EGREP "^yes.?$" >/dev/null 2>&1
++  $EGREP_TRADITIONAL "^yes.?$" >/dev/null 2>&1
 +then :
 +  DISABLE_OTP_TEST_ENGINE=yes
-+else $as_nop
-+  DISABLE_OTP_TEST_ENGINE=no
++else case e in #(
++  e) DISABLE_OTP_TEST_ENGINE=no ;;
++esac
 +fi
 +rm -rf conftest*
 +
@@ -626,6 +629,17 @@ index 35b08dd781..987d8f40a9 100755
 +then :
 +
 +              # Windows...
++              if test "x$ac_cv_sizeof_void_p" = "x8"
++then :
++
++                        lib_bits=64
++
++else case e in #(
++  e)
++                        lib_bits=32
++                     ;;
++esac
++fi
 +              if test -f "$dir/lib/VC/static/libcrypto${lib_bits}MD.lib"
 +then :
 +
@@ -647,8 +661,8 @@ index 35b08dd781..987d8f40a9 100755
 +
 +fi
 +
-+else $as_nop
-+
++else case e in #(
++  e)
 +              # Not windows...
 +              case "$host_os" in #(
 +  darwin*) :
@@ -668,8 +682,8 @@ index 35b08dd781..987d8f40a9 100755
 +
 +                            found_dynlib=yes
 +
-+else $as_nop
-+
++else case e in #(
++  e)
 +                            found_dynlib=no
 +                            case $host_os in #(
 +  openbsd*) :
@@ -687,7 +701,8 @@ index 35b08dd781..987d8f40a9 100755
 +  *) :
 +     ;;
 +esac
-+
++                        ;;
++esac
 +fi
 +                  if test $found_dynlib = yes
 +then :
@@ -728,10 +743,11 @@ index 35b08dd781..987d8f40a9 100755
 +
 +	    found_dynamic_lib=yes
 +
-+else $as_nop
-+
++else case e in #(
++  e)
 +	    found_dynamic_lib=no
-+
++	 ;;
++esac
 +fi
 +rm -f core conftest.err conftest.$ac_objext conftest.beam \
 +    conftest$ac_exeext conftest.$ac_ext
@@ -778,10 +794,11 @@ index 35b08dd781..987d8f40a9 100755
 +
 +	    found_dynamic_lib=yes
 +
-+else $as_nop
-+
++else case e in #(
++  e)
 +	    found_dynamic_lib=no
-+
++	 ;;
++esac
 +fi
 +rm -f core conftest.err conftest.$ac_objext conftest.beam \
 +    conftest$ac_exeext conftest.$ac_ext
@@ -832,10 +849,11 @@ index 35b08dd781..987d8f40a9 100755
 +
 +	    found_static_lib=yes
 +
-+else $as_nop
-+
++else case e in #(
++  e)
 +	    found_static_lib=no
-+
++	 ;;
++esac
 +fi
 +rm -f core conftest.err conftest.$ac_objext conftest.beam \
 +    conftest$ac_exeext conftest.$ac_ext
@@ -882,10 +900,11 @@ index 35b08dd781..987d8f40a9 100755
 +
 +	    found_static_lib=yes
 +
-+else $as_nop
-+
++else case e in #(
++  e)
 +	    found_static_lib=no
-+
++	 ;;
++esac
 +fi
 +rm -f core conftest.err conftest.$ac_objext conftest.beam \
 +    conftest$ac_exeext conftest.$ac_ext
@@ -903,7 +922,8 @@ index 35b08dd781..987d8f40a9 100755
 +  break
 +fi
 +              done
-+
++           ;;
++esac
 +fi
 +
 +              else
@@ -945,11 +965,12 @@ index 35b08dd781..987d8f40a9 100755
 +
 +_ACEOF
 +if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-+  $EGREP "^yes.?$" >/dev/null 2>&1
++  $EGREP_TRADITIONAL "^yes.?$" >/dev/null 2>&1
 +then :
 +  valid_include=yes
-+else $as_nop
-+  valid_include=no
++else case e in #(
++  e) valid_include=no ;;
++esac
 +fi
 +rm -rf conftest*
 +
@@ -963,11 +984,12 @@ index 35b08dd781..987d8f40a9 100755
 +
 +_ACEOF
 +if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-+  $EGREP "^yes.?$" >/dev/null 2>&1
++  $EGREP_TRADITIONAL "^yes.?$" >/dev/null 2>&1
 +then :
 +  v3_include=yes
-+else $as_nop
-+  v3_include=no
++else case e in #(
++  e) v3_include=no ;;
++esac
 +fi
 +rm -rf conftest*
 +
@@ -985,11 +1007,12 @@ index 35b08dd781..987d8f40a9 100755
 +
 +_ACEOF
 +if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-+  $EGREP "^yes.?$" >/dev/null 2>&1
++  $EGREP_TRADITIONAL "^yes.?$" >/dev/null 2>&1
 +then :
 +  DISABLE_OTP_TEST_ENGINE=yes
-+else $as_nop
-+  DISABLE_OTP_TEST_ENGINE=no
++else case e in #(
++  e) DISABLE_OTP_TEST_ENGINE=no ;;
++esac
 +fi
 +rm -rf conftest*
 +
@@ -1022,6 +1045,17 @@ index 35b08dd781..987d8f40a9 100755
 +then :
 +
 +              # Windows...
++              if test "x$ac_cv_sizeof_void_p" = "x8"
++then :
++
++                        lib_bits=64
++
++else case e in #(
++  e)
++                        lib_bits=32
++                     ;;
++esac
++fi
 +              if test -f "$dir/lib/VC/static/libcrypto${lib_bits}MD.lib"
 +then :
 +
@@ -1043,8 +1077,8 @@ index 35b08dd781..987d8f40a9 100755
 +
 +fi
 +
-+else $as_nop
-+
++else case e in #(
++  e)
 +              # Not windows...
 +              case "$host_os" in #(
 +  darwin*) :
@@ -1064,8 +1098,8 @@ index 35b08dd781..987d8f40a9 100755
 +
 +                            found_dynlib=yes
 +
-+else $as_nop
-+
++else case e in #(
++  e)
 +                            found_dynlib=no
 +                            case $host_os in #(
 +  openbsd*) :
@@ -1083,7 +1117,8 @@ index 35b08dd781..987d8f40a9 100755
 +  *) :
 +     ;;
 +esac
-+
++                        ;;
++esac
 +fi
 +                  if test $found_dynlib = yes
 +then :
@@ -1124,10 +1159,11 @@ index 35b08dd781..987d8f40a9 100755
 +
 +	    found_dynamic_lib=yes
 +
-+else $as_nop
-+
++else case e in #(
++  e)
 +	    found_dynamic_lib=no
-+
++	 ;;
++esac
 +fi
 +rm -f core conftest.err conftest.$ac_objext conftest.beam \
 +    conftest$ac_exeext conftest.$ac_ext
@@ -1174,10 +1210,11 @@ index 35b08dd781..987d8f40a9 100755
 +
 +	    found_dynamic_lib=yes
 +
-+else $as_nop
-+
++else case e in #(
++  e)
 +	    found_dynamic_lib=no
-+
++	 ;;
++esac
 +fi
 +rm -f core conftest.err conftest.$ac_objext conftest.beam \
 +    conftest$ac_exeext conftest.$ac_ext
@@ -1228,10 +1265,11 @@ index 35b08dd781..987d8f40a9 100755
 +
 +	    found_static_lib=yes
 +
-+else $as_nop
-+
++else case e in #(
++  e)
 +	    found_static_lib=no
-+
++	 ;;
++esac
 +fi
 +rm -f core conftest.err conftest.$ac_objext conftest.beam \
 +    conftest$ac_exeext conftest.$ac_ext
@@ -1278,10 +1316,11 @@ index 35b08dd781..987d8f40a9 100755
 +
 +	    found_static_lib=yes
 +
-+else $as_nop
-+
++else case e in #(
++  e)
 +	    found_static_lib=no
-+
++	 ;;
++esac
 +fi
 +rm -f core conftest.err conftest.$ac_objext conftest.beam \
 +    conftest$ac_exeext conftest.$ac_ext
@@ -1299,7 +1338,8 @@ index 35b08dd781..987d8f40a9 100755
 +  break
 +fi
 +              done
-+
++           ;;
++esac
 +fi
 +
 +            fi
