@@ -15,7 +15,7 @@ jobs:
           tag=$(printf '%s' "$release_json" | jq -r '.tag_name')
           
           if [[ "$tag" != OTP-* ]]; then
-            echo "A non-release tag was detected. Stopping execution"
+            echo "A non-release tag was detected. Value was: ${tag}. Stopping execution"
             exit 1
           fi
 
