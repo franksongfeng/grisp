@@ -1,0 +1,61 @@
+name: Check OTP Pre-Releases
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *' # Every hour
+
+jobs:
+  get-prereleases:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Fetch OTP prerelease releases
+        id: set-matrix
+        run: |
+          release_json=$(curl -sL -H "Accept: application/vnd.github+json" https://api.github.com/repos/erlang/otp/releases)
+          prerelease_json=$(jq '[.[] | select(.prerelease == true)]' <<< "$release_json")
+          matrix=$(jq -c '{release: [.[]]}' <<< "$prerelease_json")
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+  check-otp:
+    needs: get-prereleases
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.get-prereleases.outputs.matrix) }}
+    steps:
+      - name: Extract tag name
+        run: |
+          echo "Checking tag: ${{ matrix.release.tag_name }}"
+          echo "${{ matrix.release.tag_name }}" > last_seen_ver.txt
+          echo "LAST_OTP=${{ matrix.release.tag_name }}" >> $GITHUB_ENV
+
+      - uses: actions/cache@v4
+        id: version-cache
+        env:
+          cache-name: cached-version
+        with:
+          path: last_cached_ver.txt
+          key: ${{ env.LAST_OTP }}
+
+      - name: Compare with Cached Version
+        id: compare-vsn
+        continue-on-error: true
+        run: |
+          diff last_cached_ver.txt last_seen_ver.txt
+
+      - name: Update Cached Version
+        run: |
+          cp last_seen_ver.txt last_cached_ver.txt
+
+      - name: Trigger OTP Package Build
+        if: ${{ steps.compare-vsn.outcome == 'failure' }}
+        run: |
+          OTP=$(echo "${{ matrix.release.tag_name }}" | cut -d'-' -f2-)
+          echo "Triggering build for OTP version: $OTP"
+          curl -L -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.everest-preview+json" \
+            https://api.github.com/repos/grisp/grisp/dispatches \
+            -d "{\"event_type\":\"new-otp-release\",\"client_payload\":{\"otp\":\"\\\\\\\"${OTP}\\\\\\\"\",\"unit\":false,\"integration\":true}}"
